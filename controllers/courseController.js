@@ -1,6 +1,5 @@
 const Course = require('../models/Course');
 
-
 exports.createCourse = async (req, res) => {
     const { title, description, content } = req.body;
     try {
@@ -42,9 +41,10 @@ exports.updateCourse = async (req, res) => {
         const course = await Course.findById(req.params.id);
         if (!course) return res.status(404).json({ message: 'Course not found' });
 
-        if (course.instructor.toString() !== req.user.id) {
+        if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(401).json({ message: 'User not authorized' });
         }
+        
 
         course.title = title;
         course.description = description;
@@ -62,14 +62,16 @@ exports.deleteCourse = async (req, res) => {
         const course = await Course.findById(req.params.id);
         if (!course) return res.status(404).json({ message: 'Course not found' });
 
-        
-        if (course.instructor.toString() !== req.user.id) {
+        if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(401).json({ message: 'User not authorized' });
         }
 
-        await course.remove();
+        await course.deleteOne(); // Use deleteOne() method instead of remove()
         res.json({ message: 'Course removed successfully' });
     } catch (err) {
+        console.error(err); // Log the error for debugging
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+

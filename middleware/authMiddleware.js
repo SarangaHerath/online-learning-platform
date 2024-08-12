@@ -1,26 +1,35 @@
+// Import the jsonwebtoken module at the top of the file
 const jwt = require('jsonwebtoken');
 
 const authMiddleware = (req, res, next) => {
-    // Get the token from the Authorization header
+    console.log('Auth Middleware Executed');  // Log to ensure middleware runs
+
     const authHeader = req.headers['authorization'];
+    console.log('Authorization Header:', authHeader);  // Log the authorization header
 
-    if (!authHeader) return res.status(401).json({ message: 'No token, authorization denied' });
+    if (!authHeader) {
+        return res.status(401).json({ message: 'No token, authorization denied' });
+    }
 
-    // Bearer <token> - we split to get the token only
     const token = authHeader.split(' ')[1];
+    console.log('Token:', token);  // Log the token
 
-    if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
+    if (!token) {
+        return res.status(401).json({ message: 'No token, authorization denied' });
+    }
 
     try {
-        // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // Set the user on the request object
+        console.log('Decoded Token:', decoded);
         req.user = decoded;
 
-        // Continue to the next middleware/route handler
+        if (req.user.role !== 'instructor' && req.user.role !== 'admin' && req.user.role !== 'student') {
+            return res.status(403).json({ message: 'Access denied: insufficient permissions' });
+        }
+
         next();
     } catch (err) {
-        // If the token is invalid, return an error
+        console.error('Token verification failed:', err);  // This should log if token verification fails
         res.status(400).json({ message: 'Token is not valid' });
     }
 };
